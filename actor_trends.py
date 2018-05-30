@@ -7,10 +7,31 @@ from bokeh.plotting import *                                                    
 import requests
 
 def access_api(url, payload):
-    """Given the API url and the desired parameters, makes a GET call to retrieve 
-    information from the API and returns it as a dictionary."""
+    """Generic calling function to get information from the TMDB database."""
     r = requests.get(url, params = payload)
     return r.json()
+
+def movie_details(movie_ids):
+    """Takes a list called movie_ids list, makes a a list of dictionaries of movies with revenue greater than $10,0000"""
+    
+    """A list of dictionaries certain info of actor's movies that have revenue greater than $1000 as a filter."""
+    movie_details = []                                                          
+
+    for movie_id in movie_ids:
+        movies_lists_dict = {}                                                                  # Dictionary to store various lists about movies
+        film_url = "https://api.themoviedb.org/3/movie/" + str(movie_id)                        #URL ID pattern
+        movie_response = access_api(film_url, {"api_key": TMDB_KEY, \
+            "movie_id": id})                                                                    #Using access_api(). Arguments are url variable and payload
+
+        print('.', end = ' ')                                                                   #Print dots to show progress
+        sys.stdout.flush()                                                                      #Flush dots from buffer
+        if (movie_response['revenue'] >= 10000):                                                #Filter for movies
+            movies_lists_dict['release_date'] = movie_response['release_date']
+            movies_lists_dict['profit'] = movie_response['revenue'] - movie_response['budget']  #Store profit into a list in movies_lists_dict
+            movie_details.append(movies_lists_dict)
+    movie_details = sorted(movie_details, key=lambda k: k['release_date'])                      #Sort the list according to release_dates
+    
+    return(movie_details)
 
 def return_movie_id(name_of_actor):
     """Takes actor name, finds ID of the actor from the API and returns all their movie id's."""
@@ -29,30 +50,7 @@ def return_movie_id(name_of_actor):
     movie_ids = []                                                                            
     for num in range(0, len(search_movie_credits['cast'])):
         movie_ids.append(search_movie_credits['cast'][num]['id'])                                    
-
     return(movie_ids)
-
-def movie_details(movie_ids):
-    """Takes a list called movie_ids list, makes a a list of dictionaries of movies with revenue greater than $10,0000"""
-    
-    """A list of dictionaries certain info of actor's movies that have revenue greater than $1000 as a filter."""
-    movie_details = []															
-
-    for movie_id in movie_ids:
-        movies_lists_dict = {}																	# Dictionary to store various lists about movies
-        film_url = "https://api.themoviedb.org/3/movie/" + str(movie_id)     					#URL ID pattern
-        movie_response = access_api(film_url, {"api_key": TMDB_KEY, \
-     		"movie_id": id})                                                					#Using access_api(). Arguments are url variable and payload
-
-        print('.', end = ' ')                                          							#Print dots to show progress
-        sys.stdout.flush()                                              						#Flush dots from buffer
-        if (movie_response['revenue'] >= 10000):      											#Filter for movies
-            movies_lists_dict['release_date'] = movie_response['release_date']
-            movies_lists_dict['profit'] = movie_response['revenue'] - movie_response['budget']  #Store profit into a list in movies_lists_dict
-            movie_details.append(movies_lists_dict)
-    
-    movie_details = sorted(movie_details, key=lambda k: k['release_date'])     					#Sort the list according to release_dates
-    return(movie_details)
 
 
 def create_graph(name_of_actor,movie_deets):
@@ -92,13 +90,11 @@ def create_graph(name_of_actor,movie_deets):
     show(p)
 
 if __name__ == "__main__":
-
+    """ Initiate program. """
+    
     name_of_actor = input('\nEnter actor name: ')                                            	#Input actor name with UI for user on bash
-    
     movie_ids = return_movie_id(name_of_actor)                                           		#Get name_of_actor's movie IDs
-    
     print('\nCreating popularity graph for '+ name_of_actor.capitalize() + ' movies')			#UI for user on bash
-
     movie_deets = movie_details(movie_ids)                             							#Call movie_details function
     print('\n')
     create_graph(name_of_actor,movie_deets)                           							#Plot using Bokeh
